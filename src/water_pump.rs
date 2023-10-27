@@ -1,13 +1,13 @@
 use std::{
-    collections::BTreeMap,
+    collections::HashMap,
     sync::{Arc, Mutex},
 };
 
 use micro_rdk::common::{
     board::BoardType,
     config::ConfigType,
-    motor::{Motor, MotorType},
-    registry::{self, ComponentRegistry, Dependency},
+    motor::{Motor, MotorSupportedProperties, MotorType},
+    registry::{self, ComponentRegistry, Dependency, RegistryError},
     status::Status,
     stop::Stoppable,
 };
@@ -19,15 +19,11 @@ pub struct WaterPump {
     led: Option<i32>,
 }
 
-pub fn register_model(registry: &mut ComponentRegistry) {
-    if registry
-        .register_motor("water_pump", &WaterPump::from_config)
-        .is_err()
-    {
-        log::error!("water_pump motor already registered")
-    } else {
-        log::info!("water_pump motor registration ok")
-    }
+pub fn register_model(registry: &mut ComponentRegistry) -> anyhow::Result<(), RegistryError> {
+    registry.register_motor("water_pump", &WaterPump::from_config)?;
+    log::info!("water_pump motor registration ok");
+    Ok(())
+
 }
 
 impl WaterPump {
@@ -84,6 +80,12 @@ impl Motor for WaterPump {
     ) -> anyhow::Result<Option<std::time::Duration>> {
         unimplemented!();
     }
+
+    fn get_properties(&mut self) -> MotorSupportedProperties {
+        MotorSupportedProperties {
+            position_reporting: false,
+        }
+    }
 }
 
 impl Stoppable for WaterPump {
@@ -93,9 +95,9 @@ impl Stoppable for WaterPump {
 }
 
 impl Status for WaterPump {
-    fn get_status(&self) -> anyhow::Result<Option<prost_types::Struct>> {
-        Ok(Some(prost_types::Struct {
-            fields: BTreeMap::new(),
+    fn get_status(&self) -> anyhow::Result<Option<micro_rdk::google::protobuf::Struct>> {
+        Ok(Some(micro_rdk::google::protobuf::Struct {
+            fields: HashMap::new(),
         }))
     }
 }
