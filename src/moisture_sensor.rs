@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    collections::{BTreeMap, HashMap},
+    collections::{HashMap},
     rc::Rc,
     sync::{Arc, Mutex},
 };
@@ -8,7 +8,7 @@ use std::{
 use micro_rdk::common::{
     analog::AnalogReader,
     config::ConfigType,
-    registry::{self, ComponentRegistry, Dependency},
+    registry::{self, ComponentRegistry, Dependency, RegistryError},
     sensor::{
         GenericReadingsResult, Sensor, SensorResult, SensorT, SensorType, TypedReadingsResult,
     },
@@ -17,15 +17,10 @@ use micro_rdk::common::{
 
 pub struct MoistureSensor(Rc<RefCell<dyn AnalogReader<u16, Error = anyhow::Error>>>);
 
-pub fn register_model(registry: &mut ComponentRegistry) {
-    if registry
-        .register_sensor("moisture", &MoistureSensor::from_config)
-        .is_err()
-    {
-        log::error!("moisture sensor model already registered")
-    } else {
-        log::info!("moisture sensor registration ok")
-    }
+pub fn register_model(registry: &mut ComponentRegistry) -> anyhow::Result<(), RegistryError> {
+    registry.register_sensor("moisture", &MoistureSensor::from_config)?;
+    log::info!("moisture sensor registration ok");
+    Ok(())
 }
 
 impl MoistureSensor {
@@ -62,9 +57,9 @@ impl SensorT<f64> for MoistureSensor {
 }
 
 impl Status for MoistureSensor {
-    fn get_status(&self) -> anyhow::Result<Option<prost_types::Struct>> {
-        Ok(Some(prost_types::Struct {
-            fields: BTreeMap::new(),
+    fn get_status(&self) -> anyhow::Result<Option<micro_rdk::google::protobuf::Struct>> {
+        Ok(Some(micro_rdk::google::protobuf::Struct {
+            fields: HashMap::new(),
         }))
     }
 }
