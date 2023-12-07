@@ -5,16 +5,19 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use micro_rdk::DoCommand;
+
 use micro_rdk::common::{
     analog::AnalogReader,
     config::ConfigType,
     registry::{self, ComponentRegistry, Dependency, RegistryError},
     sensor::{
-        GenericReadingsResult, Sensor, SensorResult, SensorT, SensorType, TypedReadingsResult,
+        GenericReadingsResult, Readings, Sensor, SensorResult, SensorT, SensorType, TypedReadingsResult,
     },
     status::Status,
 };
 
+#[derive(DoCommand)]
 pub struct MoistureSensor(Rc<RefCell<dyn AnalogReader<u16, Error = anyhow::Error>>>);
 
 pub fn register_model(registry: &mut ComponentRegistry) -> anyhow::Result<(), RegistryError> {
@@ -37,7 +40,9 @@ impl MoistureSensor {
     }
 }
 
-impl Sensor for MoistureSensor {
+impl Sensor for MoistureSensor {}
+
+impl Readings for MoistureSensor {
     fn get_generic_readings(&self) -> anyhow::Result<GenericReadingsResult> {
         Ok(self
             .get_readings()?
