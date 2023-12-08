@@ -3,6 +3,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use micro_rdk::DoCommand;
+
 use micro_rdk::common::{
     board::BoardType,
     config::ConfigType,
@@ -13,6 +15,7 @@ use micro_rdk::common::{
 };
 
 /// This driver is for a water pump and optional led
+#[derive(DoCommand)]
 pub struct WaterPump {
     board_handle: BoardType,
     pin: i32,
