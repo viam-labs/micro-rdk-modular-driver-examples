@@ -11,7 +11,7 @@ use micro_rdk::common::{
     motor::{Motor, MotorSupportedProperties, MotorType},
     registry::{self, ComponentRegistry, Dependency, RegistryError},
     status::Status,
-    stop::Stoppable,
+    actuator::Actuator,
 };
 
 /// This driver is for a water pump and optional led
@@ -91,7 +91,13 @@ impl Motor for WaterPump {
     }
 }
 
-impl Stoppable for WaterPump {
+impl Actuator for WaterPump {
+    fn is_moving(&mut self) -> anyhow::Result<bool> {
+        self.board_handle
+            .lock()
+            .unwrap()
+            .get_gpio_level(self.pin)
+    }
     fn stop(&mut self) -> anyhow::Result<()> {
         self.set_power(0.0)
     }

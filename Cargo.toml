@@ -10,7 +10,6 @@ esp-idf-sys = {git = "https://github.com/viamrobotics/esp-idf-sys.git"}
 
 [dependencies]
 anyhow = {version = "1", features = ["backtrace"]}
-esp-idf-sys = { version = "0.33.1", features = ["binstart"] }
 log = "0.4"
 micro-rdk = {git = "https://github.com/viamrobotics/micro-rdk.git", features = ["esp32"]}
 
