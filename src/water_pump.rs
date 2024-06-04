@@ -6,12 +6,12 @@ use std::{
 use micro_rdk::DoCommand;
 
 use micro_rdk::common::{
-    board::BoardType,
-    config::ConfigType,
-    motor::{Motor, MotorSupportedProperties, MotorType},
-    registry::{self, ComponentRegistry, Dependency, RegistryError},
-    status::Status,
-    actuator::Actuator,
+    board::{BoardType},
+    config::{ConfigType},
+    motor::{Motor, MotorSupportedProperties, MotorType, MotorError },
+    registry::{self, ComponentRegistry, Dependency, RegistryError, },
+    status::{Status, StatusError}, 
+    actuator::{Actuator, ActuatorError}
 };
 
 /// This driver is for a water pump and optional led
@@ -22,18 +22,17 @@ pub struct WaterPump {
     led: Option<i32>,
 }
 
-pub fn register_model(registry: &mut ComponentRegistry) -> anyhow::Result<(), RegistryError> {
+pub fn register_model(registry: &mut ComponentRegistry) -> Result<(), RegistryError> {
     registry.register_motor("water_pump", &WaterPump::from_config)?;
     log::info!("water_pump motor registration ok");
     Ok(())
-
 }
 
 impl WaterPump {
-    pub fn from_config(cfg: ConfigType, deps: Vec<Dependency>) -> anyhow::Result<MotorType> {
+    pub fn from_config(cfg: ConfigType, deps: Vec<Dependency>) -> Result<MotorType, crate::water_pump::MotorError> {
         let board_handle = registry::get_board_from_dependencies(deps)
             .expect("failed to get board from dependencies");
-        let pin = cfg.get_attribute::<i32>("pin")?;
+        let pin = cfg.get_attribute::<i32>("pin").map_err(|_| MotorError::ConfigError("failed to get pin from board"))?;
         let led = cfg.get_attribute::<i32>("led").ok();
         Ok(Arc::new(Mutex::new(Self {
             board_handle,
@@ -44,7 +43,7 @@ impl WaterPump {
 }
 
 impl Motor for WaterPump {
-    fn set_power(&mut self, pct: f64) -> anyhow::Result<()> {
+    fn set_power(&mut self, pct: f64) -> Result<(), MotorError> {
         let pct = pct.clamp(-1.0, 1.0);
         if pct > 0.0 {
             // high
@@ -73,14 +72,14 @@ impl Motor for WaterPump {
         };
         Ok(())
     }
-    fn get_position(&mut self) -> anyhow::Result<i32> {
+    fn get_position(&mut self) -> Result<i32, MotorError> {
         unimplemented!();
     }
     fn go_for(
         &mut self,
         _rpm: f64,
         _revolutions: f64,
-    ) -> anyhow::Result<Option<std::time::Duration>> {
+    ) -> Result<Option<std::time::Duration>, MotorError> {
         unimplemented!();
     }
 
@@ -92,19 +91,19 @@ impl Motor for WaterPump {
 }
 
 impl Actuator for WaterPump {
-    fn is_moving(&mut self) -> anyhow::Result<bool> {
+    fn is_moving(&mut self) -> Result<bool, ActuatorError> {
         self.board_handle
             .lock()
             .unwrap()
-            .get_gpio_level(self.pin)
+            .get_gpio_level(self.pin).map_err(ActuatorError::BoardError)
     }
-    fn stop(&mut self) -> anyhow::Result<()> {
-        self.set_power(0.0)
+    fn stop(&mut self) -> Result<(), ActuatorError> {
+        self.set_power(0.0).map_err(|_|ActuatorError::CouldntStop)
     }
 }
 
 impl Status for WaterPump {
-    fn get_status(&self) -> anyhow::Result<Option<micro_rdk::google::protobuf::Struct>> {
+    fn get_status(&self) -> Result<Option<micro_rdk::google::protobuf::Struct>, StatusError> {
         Ok(Some(micro_rdk::google::protobuf::Struct {
             fields: HashMap::new(),
         }))
