@@ -17,30 +17,19 @@ use micro_rdk::{
     DoCommand,
 };
 
-//pub struct MoistureSensor{reader : dyn AnalogReader<u16,Error = SensorType>}
-
-pub fn register_model(registry: &mut ComponentRegistry) -> Result<(), RegistryError> {
+pub fn register_models(registry: &mut ComponentRegistry) -> Result<(), RegistryError> {
     registry.register_sensor("moisture_sensor", &MoistureSensor::from_config)?;
     Ok(())
 
 }
 #[derive(DoCommand)]
+
 pub struct MoistureSensor{
     reader : AnalogReaderType<u16>
 }
 
-
 impl MoistureSensor {
     pub fn from_config(_cfg: ConfigType, deps: Vec<Dependency>) -> Result<SensorType, SensorError> {
-        // // get board
-        // let board = registry::get_board_from_dependencies(deps)
-        //     .expect("failed to get board from dependencies");
-        // // get reader from the board (analog reader set in app.viam)
-        // let reader = board
-        //     .lock()
-        //     .unwrap()
-        //     .get_analog_reader_by_name("moisture".to_string())?;
-        // Ok(Arc::new(Mutex::new(Self {reader}))) 
         let board = get_board_from_dependencies(deps);
         if board.is_none() {
             return Err(SensorError::ConfigError("sensor missing board attribute"));
