@@ -22,14 +22,14 @@ pub struct WaterPump {
     led: Option<i32>,
 }
 
-pub fn register_model(registry: &mut ComponentRegistry) -> anyhow::Result<(), RegistryError> {
+pub fn register_models(registry: &mut ComponentRegistry) -> Result<(), RegistryError> {
     registry.register_motor("water_pump", &WaterPump::from_config)?;
     log::info!("water_pump motor registration ok");
     Ok(())
 }
 
 impl WaterPump {
-    pub fn from_config(cfg: ConfigType, deps: Vec<Dependency>) -> anyhow::Result<MotorType> {
+    pub fn from_config(cfg: ConfigType, deps: Vec<Dependency>) -> Result<MotorType, MotorError> {
         let board_handle = registry::get_board_from_dependencies(deps)
             .expect("failed to get board from dependencies");
         let pin = cfg.get_attribute::<i32>("pin").map_err(|_| MotorError::ConfigError("failed to get pin from board"))?;
